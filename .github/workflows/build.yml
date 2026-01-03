@@ -1,10 +1,11 @@
+
 name: Build Geode Mod
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - "main"
+      - "**"
 
 jobs:
   build:
@@ -14,26 +15,38 @@ jobs:
         config:
         - name: Windows
           os: windows-latest
-          
-        - name: MacOS
+
+        - name: macOS
           os: macos-latest
+
+        - name: iOS
+          os: macos-latest
+          target: iOS
+
+        - name: Android32
+          os: ubuntu-latest
+          target: Android32
+
+        - name: Android64
+          os: ubuntu-latest
+          target: Android64
 
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
 
     steps:
-      - uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.ZBOT_GITHUB_PAT }}
-          submodules: 'recursive'
+      - uses: actions/checkout@v4
 
       - name: Build the mod
         uses: geode-sdk/build-geode-mod@main
         with:
+          export-pdb: true
+          build-config: RelWithDebInfo
+          bindings: geode-sdk/bindings
+          bindings-ref: main
           combine: true
-          cli: "latest"
-          sdk: "nightly"
-      
+          target: ${{ matrix.config.target }}
+
   package:
     name: Package builds
     runs-on: ubuntu-latest
@@ -43,7 +56,7 @@ jobs:
       - uses: geode-sdk/build-geode-mod/combine@main
         id: build
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Build Output
           path: ${{ steps.build.outputs.build-output }}
